@@ -27,6 +27,22 @@ from utils.data_loader import load_listings
 
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
 
+'''stopwords are useless buffer words'''
+
+_STOPWORDS = {
+    "a", "an"
+}
+
+'''make a function that keeps only keywords and remove stopwords'''
+
+
+
+'''function to pull out the sizes from the clothes'''
+
+
+
+
+'''size requested is in  a listing size'''
 def search_listings(
     description: str,
     size: str | None = None,

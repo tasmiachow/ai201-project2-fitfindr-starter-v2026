@@ -41,8 +41,7 @@
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
-
-
+FitFindr is an app that allows users to ask for a specific article of clothing and also help you plan your fits. Our agent searches listings, works out what it would go with, and writes a caption for it.
 ---
 
 ## Tool Inventory
@@ -59,7 +58,7 @@
 
 ### `search_listings`
 
-- **What it does:**
+- **What it does:** Goes through our listings in data and returns items that match the user's query.
 - **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
 - **Returns:**
 - **When it has nothing:**
