@@ -23,6 +23,7 @@ the description has to say what is *in* the list.
 import config  # noqa: F401 — you'll use this in search_listings
 from generate import generate
 from utils.data_loader import load_listings
+import re
 
 
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
@@ -30,19 +31,61 @@ from utils.data_loader import load_listings
 '''stopwords are useless buffer words'''
 
 _STOPWORDS = {
-    "a", "an"
+    "a", "an", "and", "the", "for", "with", "in", "of", "to", "on", "at", "by", "is", "it"
 }
 
-'''make a function that keeps only keywords and remove stopwords'''
+def _keywords(text: str) -> set[str]:
+    """Lowercase words worth matching on, stopwords removed."""
+    words = re.findall(r"[a-z0-9']+", (text or "").lower())
+    return {w for w in words if w not in _STOPWORDS and len(w) > 1}
 
+def _size_tokens(size: str) -> set[str]:
+    """Extract tokens from size string safely."""
+    cleaned = re.sub(r"\([^)]*\)", " ", size or "") # drop parentheticals
+    parts = [p.strip().upper() for p in cleaned.split("/")]  # Fixed: added () to upper()
+    return {p for p in parts if p}
 
+def _size_matches(wanted: str, listing_size: str) -> bool:
+    """Check if the wanted size matches the listing size."""
+    if not wanted:
+        return True
+    
+    listing_tokens = _size_tokens(listing_size)
+    if not listing_tokens:
+        return False
 
-'''function to pull out the sizes from the clothes'''
+    wanted_tokens = _size_tokens(wanted)
 
+    # 1. Direct exact token match (e.g. 'M' in {'S', 'M'})
+    if wanted_tokens & listing_tokens:
+        return True
 
+    # 2. Allow 'ONE SIZE' / 'OS' for category matches
+    # (Category compatibility is handled during scoring/filtering)
+    if any("ONE" in t or t == "OS" for t in listing_tokens):
+        return True
 
+    # 3. Match waist/numeric sizes cleanly (e.g. 'W30 L30' matching 'W30' or '30')
+    clean_wanted = {re.sub(r"^[WL]", "", t) for t in wanted_tokens if re.search(r"\d+", t)}
+    clean_listing = {re.sub(r"^[WL]", "", t) for t in listing_tokens if re.search(r"\d+", t)}
 
-'''size requested is in  a listing size'''
+    if clean_wanted and clean_listing:
+        return bool(clean_wanted & clean_listing)
+
+    return False
+
+def _get_listing_text(item: dict) -> str:
+    """Combine all searchable textual fields from a listing."""
+    fields = [
+        item.get("title", ""),
+        item.get("description", ""),
+        item.get("category", ""),
+        " ".join(item.get("style_tags", [])),
+        " ".join(item.get("colors", [])),
+        item.get("brand") or ""
+    ]
+    return " ".join(fields)
+
 def search_listings(
     description: str,
     size: str | None = None,
@@ -95,8 +138,53 @@ def search_listings(
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
     # TODO: replace this with your implementation
-    return []
+    listings = load_listings()
 
+    # 1. Price Filter (Inclusive)
+    if max_price is not None:
+        listings = [item for item in listings if item.get("price", 0) <= max_price]
+
+    # 2. Size Filter
+    if size:
+        listings = [item for item in listings if _size_matches(size, item.get("size", ""))]
+
+    # 3. Score listings by keyword overlap
+    query_keywords = _keywords(description)
+    if not query_keywords:
+        return []
+
+    scored_listings = []
+    for item in listings:
+        # Give higher weight to matches in title and category over accessories/tags
+        title_keywords = _keywords(item.get("title", ""))
+        category_keywords = _keywords(item.get("category", ""))
+        all_item_words = _keywords(_get_listing_text(item))
+
+        # Core overlap
+        overlap_score = len(query_keywords & all_item_words)
+
+        # Bonus weight if query keywords explicitly hit title or category
+        if query_keywords & title_keywords:
+            overlap_score += 1
+        if query_keywords & category_keywords:
+            overlap_score += 1
+
+        # Drop anything scoring zero
+        if overlap_score > 0:
+            item_copy = item.copy()
+            item_copy["score"] = overlap_score
+            scored_listings.append(item_copy)
+
+    # 4. Sort by score descending and cap at SEARCH_RESULT_LIMIT
+    scored_listings.sort(key=lambda x: x["score"], reverse=True)
+
+    results = []
+    limit = getattr(config, "SEARCH_RESULT_LIMIT", 10)
+    for item in scored_listings[:limit]:
+        item.pop("score", None)
+        results.append(item)
+
+    return results
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
 

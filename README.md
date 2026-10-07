@@ -1,5 +1,5 @@
 # FitFindr
-
+## Tasmia Chowdhury 
 > ### 👋 Start here
 >
 > **New to this repo? Read [RUNNING.md](RUNNING.md) first** — setup, every
@@ -59,23 +59,32 @@ FitFindr is an app that allows users to ask for a specific article of clothing a
 ### `search_listings`
 
 - **What it does:** Goes through our listings in data and returns items that match the user's query.
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **Inputs:** 
+          description: string (User inputs a description of something they would like)
+          size: string (small - large, etc) 
+          max_price: float 
+
+<!-- name and type each: `max_price` (float), not "a price" -->
+- **Returns:**  it returns a list[dict] -- the list holds all the items that match. Each item is it's own dictionary. We can have multiple items that match if we have that in our inventory. 
+- **When it has nothing:** In the case the list is empty, it will stop the loop and ask the user to try for another item, since we don't have anything in our inventory that matches. 
+
+
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Given a thrifted item and the user's wardrobe, suggest one outfit.
+- **Inputs:** new_item: dict, wardrobe: dict
+- **Returns:** A string suggesting an outfit with the new item and clothes the user already has in their wardrobe.
+- **When it has nothing:** Returns a string saying it cannot suggest an outfit and the reason. Maybe the user only has shirts and is trying to buy another shirt. Stops the loop. 
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Write a short caption someone would actually post about the find.
+- **Inputs:** outfit:  (str) the outfit suggestion string from suggest_outfit().
+               new_item:  (dict) the listing dict for the item.
+- **Returns:**  A two-to-four sentence caption. (str)
+- **When it has nothing:** If `outfit` is empty or whitespace, return a descriptive message rather
+        than raising.
 
 ---
 

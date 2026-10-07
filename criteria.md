@@ -28,7 +28,7 @@ tool calls and returns a fit card — in at least 4 of 5 tries.
 <!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
      "my search is a plain keyword match and some phrasings will miss" is a
      real answer. -->
-
+my search is a plain keyword match and some phrasings will miss.
 ---
 
 ## 2. An impossible query stops before the second tool
@@ -40,9 +40,12 @@ Given a query that matches no listings, the agent stops before calling
 <!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
      about this path? -->
 
+Because the list is empty if a query does not match, it should immediately stop before trying to run the rest of the tools. It should happen 100% of the time 
+a query is unmatched, otherwise the pipeline will run with no clothing items.
+
 ---
 
-## 3. Something about state
+## 3. The item that search found is used for the next tools 5/5 times.
 
 <!-- YOU WRITE THIS ONE.
 
@@ -56,13 +59,14 @@ Given a query that matches no listings, the agent stops before calling
 
 
 
-**Why this target:**
+
+**Why this target:** I think its important for the agent pipeline to run with a synced state across the tools. Otherwise it will look like the agent is hallucinating. The [selected_item] can be a random int(0, len(matches)) and that can be passed as a parameter. If this fails than I'll defer to using matches[0]
 
 
 
 ---
 
-## 4. Something about the fit card
+## 4. The fit card mentions the price of the item 5/5 times
 
 <!-- YOU WRITE THIS ONE.
 
@@ -77,13 +81,13 @@ Given a query that matches no listings, the agent stops before calling
 
 
 
-**Why this target:**
+**Why this target:** It is already in new_item[dict] it should be relatively simple to pick up the price of the item and for the llm to include it in its creative caption.
 
 
 
 ---
 
-## 5. Your choice
+## 5. If Suggest outfit fails - it intelligently lets the user know that there is not enough __ (pants) in the wardrobe or etc. 
 
 <!-- YOU WRITE THIS ONE TOO.
 
@@ -94,7 +98,7 @@ Given a query that matches no listings, the agent stops before calling
 
 
 
-**Why this target:**
+**Why this target:** I think it will be interesting to see if the LLM can reason why it cannot suggest an outfit to tell the user. 
 
 
 
