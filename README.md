@@ -206,7 +206,8 @@ $ python -c "from tools import suggest_outfit; from utils.data_loader import get
 $ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
 
 ```
-Nothing beats the effortless vibe of classic denim and fresh kicks for a day out. I am obsessed with how these Vintage Levi's 501 Jeans in medium wash fit every single time. Snagged this staple piece on depop for just $38.0 and I will definitely be living in them all season long.
+<p>Nothing beats the effortless vibe of classic denim and fresh kicks for a day out. I am obsessed with how these Vintage Levi's 501 Jeans in medium wash fit every single time. Snagged this staple piece on depop for just $38.0 and I will definitely be living in them all season long. </p>
+
 ---
 
 ## How I Used AI
