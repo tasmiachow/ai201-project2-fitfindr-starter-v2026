@@ -60,7 +60,7 @@ a query is unmatched, otherwise the pipeline will run with no clothing items.
 
 
 
-**Why this target:** I think its important for the agent pipeline to run with a synced state across the tools. Otherwise it will look like the agent is hallucinating. The [selected_item] can be a random int(0, len(matches)) and that can be passed as a parameter. If this fails than I'll defer to using matches[0]
+**Why this target:** I think its important for the agent pipeline to run with a synced state across the tools. Otherwise it will look like the agent is hallucinating. The matches[0] is the item that best fits the user's query.
 
 
 
@@ -87,8 +87,7 @@ a query is unmatched, otherwise the pipeline will run with no clothing items.
 
 ---
 
-## 5. If Suggest outfit fails - it intelligently lets the user know that there is not enough __ (pants) in the wardrobe or etc. 
-
+## 5. If suggest outfit fails it gives general outfit to be used in create_fit_card. 
 <!-- YOU WRITE THIS ONE TOO.
 
      Pick something you actually care about getting right. Speed, the empty
@@ -98,7 +97,7 @@ a query is unmatched, otherwise the pipeline will run with no clothing items.
 
 
 
-**Why this target:** I think it will be interesting to see if the LLM can reason why it cannot suggest an outfit to tell the user. 
+**Why this target:** I think it will be interesting to see if the LLM can use it's outfit again to create a creative card. 
 
 
 

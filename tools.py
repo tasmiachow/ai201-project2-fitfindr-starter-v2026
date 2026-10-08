@@ -217,7 +217,41 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
     # TODO: replace this with your implementation
-    return ""
+    wardrobe_items = wardrobe.get("items", []) if isinstance(wardrobe, dict) else []
+    
+    item_title = new_item.get("title", "this item")
+    item_desc = new_item.get("description", "")
+    item_colors = new_item.get("colors")
+
+    if not wardrobe_items:
+        prompt = (
+            f"The user is considering buying this item:\n"
+            f"- Title: {item_title}\n"
+            f"- Colors: {item_colors}\n"
+            f"- Description: {item_desc}\n\n"
+            f"Their wardrobe is currently empty. Provide general styling advice, "
+            f"mentioning what kinds of pieces pair well with it and what vibe it suits. Make sure you tell the user their wardrobe is currently empty as well."
+        )
+    else:
+        wardrobe_lines = [
+            f"- {w.get('name', 'Item')} ({w.get('category', 'clothing')})"
+            for w in wardrobe_items
+        ]
+        wardrobe_str = "\n".join(wardrobe_lines)
+
+        prompt = (
+            f"The user is considering buying this item:\n"
+            f"- Title: {item_title}\n"
+            f"- Colors: {item_colors}\n"
+            f"- Description: {item_desc}\n\n"
+            f"Suggest 1 to 2 complete outfits styling this new item by pairing it "
+            f"with specific pieces from their current wardrobe below:\n"
+            f"{wardrobe_str}\n\n"
+            f"Be specific about which wardrobe items to pick and describe the outfit vibe."
+        )
+
+    #system_prompt = "You are an expert personal fashion stylist. Give clear, concise, and realistic outfit suggestions."
+    return generate(prompt=prompt)
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -257,4 +291,27 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
     # TODO: replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return "Cannot generate caption: missing outfit suggestions."
+
+    item_title = new_item.get("title", "thrifted find")
+    price = new_item.get("price", "N/A")
+    platform = new_item.get("platform", "online")
+
+    prompt = (
+        f"Create a short, shareable social media caption (Instagram/TikTok OOTD style).\n\n"
+        f"Item Details:\n"
+        f"- Name: {item_title}\n"
+        f"- Price: ${price}\n"
+        f"- Platform: {platform}\n\n"
+        f"Outfit Concept:\n{outfit}\n\n"
+        f"Rules:\n"
+        f"1. Exactly 2 to 4 sentences total.\n"
+        f"2. Casual, authentic OOTD style.\n"
+        f"3. Naturally mention the item name, price (with '$'), and platform exactly once each.\n"
+        f"4. Focus on capturing the vibe of the fit.\n"
+        f"5. Do not include markdown tags, placeholders, or meta-commentary."
+    )
+
+    #system_prompt = "You are a trendsetting fashion creator specializing in thrifted aesthetic posts."
+    return generate(prompt=prompt) #system_prompt=system_prompt)

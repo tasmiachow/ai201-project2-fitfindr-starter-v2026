@@ -15,6 +15,7 @@ Build and test your three tools in `tools.py` first. Then come here.
 
 import config
 import trace
+import re
 from tools import search_listings, suggest_outfit, create_fit_card
 from generate import ModelUnavailable
 
@@ -46,7 +47,42 @@ def new_session(query: str, wardrobe: dict) -> dict:
         "error": None,               # set when the run ended early
     }
 
+# ── query parser ──────────────────────────────────────────────────────────────
 
+def parse_query(query: str) -> dict:
+    """
+    Parses user query into description, size, and max_price using regex and string splitting.
+    """
+    text = query.strip()
+
+    # 1. Extract max_price (e.g. "under $30", "$30", "under 30 dollars")
+    max_price = None
+    price_match = re.search(r"(?:under|\$)\s*(\d+(?:\.\d{1,2})?)", text, re.IGNORECASE)
+    if price_match:
+        max_price = float(price_match.group(1))
+
+    # 2. Extract size (e.g. "size M", "size W30 L30", "size S/M", "size 30")
+    size = None
+    size_match = re.search(r"\bsize\s+([A-Za-z0-9/\s]+?)(?=\s+under|\s+\$|\s+for|\s*$)", text, re.IGNORECASE)
+    if size_match:
+        size = size_match.group(1).strip()
+
+    # 3. Clean query into description keywords
+    clean_desc = text
+    if price_match:
+        clean_desc = re.sub(r"(?:under|\$)\s*\d+(?:\.\d{1,2})?", "", clean_desc, flags=re.IGNORECASE)
+    if size_match:
+        clean_desc = re.sub(r"\bsize\s+[A-Za-z0-9/\s]+", "", clean_desc, flags=re.IGNORECASE)
+
+    # Clean up excess words like "looking for a", "under", "for"
+    clean_desc = re.sub(r"\b(looking|for|a|an|under)\b", "", clean_desc, flags=re.IGNORECASE)
+    clean_desc = re.sub(r"\s+", " ", clean_desc).strip()
+
+    return {
+        "description": clean_desc or text,
+        "size": size,
+        "max_price": max_price,
+    }
 # ── planning loop ─────────────────────────────────────────────────────────────
 
 def run_agent(query: str, wardrobe: dict) -> dict:
@@ -108,7 +144,60 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     session = new_session(query, wardrobe)
 
     # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    session = new_session(query, wardrobe)
+    iterations = 0
+
+    try:
+        # Step 1: Track iteration limit
+        iterations += 1
+        trace.check_iterations(iterations)
+
+        # Step 2: Parse query
+        parsed = parse_query(query)
+        session["parsed"] = parsed
+        trace.step("parse_query", inputs={"query": query}, returned=parsed)
+
+        # Step 3: Search listings
+        results = search_listings(
+            description=parsed["description"],
+            size=parsed["size"],
+            max_price=parsed["max_price"],
+        )
+        session["search_results"] = results
+        trace.step("search_listings", inputs=parsed, returned=results)
+
+        # Step 4: Branch Check — stop early if no listings match
+        if not results:
+            msg = (
+                f"No items matched '{query}'. Try widening your budget, "
+                "searching for a broader item type, or adjusting your size requirement."
+            )
+            session["error"] = msg
+            return session
+
+        # Step 5: Select top match
+        selected = results[0]
+        session["selected_item"] = selected
+
+        # Step 6: Suggest Outfit
+        iterations += 1
+        trace.check_iterations(iterations)
+        
+        outfit = suggest_outfit(selected, session["wardrobe"])
+        session["outfit_suggestion"] = outfit
+        trace.step("suggest_outfit", inputs={"item": selected["title"]}, returned=outfit)
+
+        # Step 7: Create Fit Card Caption
+        iterations += 1
+        trace.check_iterations(iterations)
+
+        fit_card = create_fit_card(outfit, selected)
+        session["fit_card"] = fit_card
+        trace.step("create_fit_card", inputs={"outfit": outfit}, returned=fit_card)
+
+    except ModelUnavailable as e:
+        session["error"] = f"Model service unavailable: {e}"
+
     return session
 
 
